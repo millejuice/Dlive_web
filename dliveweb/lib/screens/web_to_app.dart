@@ -63,7 +63,7 @@ class _WebToAppState extends State<WebToApp> {
               ),
               const SizedBox(height: 30,),
                    Image.asset(
-                      hostUtil.getGifCharacter(hostProvider.character),
+                      hostUtil.getCar(hostProvider.character),
                       fit: BoxFit.cover,
                       // width: double.infinity,
                     ),
