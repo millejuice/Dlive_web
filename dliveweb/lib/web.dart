@@ -4,6 +4,7 @@ import 'package:dliveweb/screens/finish.dart';
 import 'package:dliveweb/screens/signup_page1.dart';
 import 'package:dliveweb/screens/signup_page2.dart';
 import 'package:dliveweb/screens/signup_page3.dart';
+import 'package:dliveweb/screens/web_to_app.dart';
 import 'package:flutter/material.dart';
 
 class DliveWeb extends StatelessWidget {
@@ -22,10 +23,11 @@ class DliveWeb extends StatelessWidget {
         '/coremusicadd': (context) => const CoreMusicAdd(),
         '/coremusicaddselect': (context) => const CoreMusicAddSelectScreen(),
         '/finish': (context) => const FinishScreen(),
+        '/makeroomwaiting' :(context) => const WebToApp()
       },
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
-        primaryColor: Color(0xff888888),
+        primaryColor: const Color(0xff888888),
       ),
     );
   }

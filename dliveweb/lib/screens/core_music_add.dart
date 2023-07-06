@@ -179,9 +179,6 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
     HostProvider hostProvider = Provider.of<HostProvider>(context);
     HostUtil hostUtil = HostUtil();
     hostUtil.getHost(hostProvider);
-    Size screenSize = MediaQuery.of(context).size;
-    double width = screenSize.width;
-    double height = screenSize.height;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
