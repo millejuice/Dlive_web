@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import '../models/youtube_video_model.dart';
-import '../services/youtube_service.dart';
-import '../utils/host_util.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dliveweb/models/youtube_video_model.dart';
+import 'package:dliveweb/services/youtube_service.dart';
+import 'package:dliveweb/utils/host_util.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:dliveweb/utils/room_util.dart';
 
 class CoreMusicAdd extends StatefulWidget {
   const CoreMusicAdd({Key? key}) : super(key: key);
@@ -14,14 +19,15 @@ class CoreMusicAdd extends StatefulWidget {
 
 class _CoreMusicAddState extends State<CoreMusicAdd> {
   final TextEditingController _queryController = TextEditingController();
-    String query = "";
-    List<YoutubeVideo> videos = [];
-  List<List<String>> songs = [];
+  final ApiService _apiService = ApiService();
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  String query = "";
+  String roomName = "";
+  List<YoutubeVideo> videos = [];
   Map<String, bool> videoIdSelections = {}; //각 videoId의 선택 상태를 저장하는 맵 추가
   List<YoutubeVideo> selectedVideos = []; //선택된 비디오들을 저장하는 리스트 추가
-  final ApiService _apiService = ApiService();
-
-
+  List<String> videoTitles = []; //선택된 비디오들의 제목을 저장하는 리스트 추가
 
   @override
   void initState() {
@@ -29,7 +35,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
     _queryController.addListener(_onQueryChanged);
   }
 
-   @override
+  @override
   void dispose() {
     _queryController.dispose();
     super.dispose();
@@ -41,25 +47,42 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
     });
   }
 
-  void _searchVideos(String query) {
+  void updateRoom(String roomId) {
+    firestore.collection('Room').doc(roomId).set({
+      'videoTitles': selectedVideos.map((video) => video.title).toList(),
+    }, SetOptions(merge: true));
+  }
+
+  List<String> getVideoTitles(List<YoutubeVideo> selectedVideos) {
+    List<String> videoTitles = [];
+
+    for (YoutubeVideo video in selectedVideos) {
+      videoTitles.add(video.title);
+    }
+
+    return videoTitles;
+  }
+
+  // 영상 검색 함수
+  void _searchVideos(String query, RoomProvider roomProvider) {
     if (query.isNotEmpty) {
       _apiService.fetchVideos(query).then((videos) {
         setState(() {
           this.videos = videos;
 
           // videos에 새로운 비디오들이 추가되었다면, videoIdSelections에도 초기 상태를 추가합니다.
-          for (var video in videos) {
+          videos.forEach((video) {
             if (!videoIdSelections.containsKey(video.title)) {
               videoIdSelections[video.title] = false;
             }
-          }
+          });
         });
       });
     }
   }
 
-   // 비디오 리스트 눌렀을때 실행되는 함수
-  void _onVideoTap(int index) {
+  // 비디오 리스트 눌렀을때 실행되는 함수
+  void _onVideoTap(int index, RoomProvider roomProvider) {
     setState(() {
       // 현재 선택된 항목 수를 계산합니다.
       int currentSelectedCount = selectedVideos.length;
@@ -76,7 +99,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
           selectedVideos.remove(videos[index]); // 선택 취소한 비디오를 제거합니다.
         }
 
-        _showModalSheet();
+        _showModalSheet(roomProvider);
       } else {
         // 이미 3개가 선택되어 있다면, 경고 메시지를 표시합니다.
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,10 +110,13 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   }
 
   // 포기할 수 없는 3곡(밑에서 슝 올라오는거)
-  void _showModalSheet() {
-    Timer(const Duration(milliseconds: 1500), () {
-      Navigator.pop(context); // 모달 닫기
-    });
+  void _showModalSheet(RoomProvider roomProvider) {
+    if (selectedVideos.length < 3) {
+      Timer(const Duration(milliseconds: 1500), () {
+        Navigator.pop(context); // 모달 닫기
+      });
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -136,7 +162,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                                 fit: BoxFit.cover,
                               )
                             : Image.asset(
-                                'assets/Black_logo.png',
+                                'assets/images/Black_logo.png',
                                 fit: BoxFit.fill,
                               ),
                       ),
@@ -148,7 +174,28 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                 ),
                 if (selectedVideos.length == 3)
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      videoTitles = getVideoTitles(selectedVideos);
+                      roomProvider.setSelectedVideos(selectedVideos);
+                      roomProvider.setVideoTitles(videoTitles);
+
+                      HostProvider hostProvider =
+                          Provider.of<HostProvider>(context, listen: false);
+                      List<YoutubeVideo> currentSelectedVideos =
+                          List.from(selectedVideos); // 선택된 비디오 리스트를 복사
+
+                      await RoomUtil().addRoom(
+                        roomProvider.name,
+                        roomProvider.id,
+                        roomProvider.img,
+                        roomProvider.url,
+                        roomProvider.playlist,
+                        [hostProvider.name],
+                        roomProvider.videoTitles,
+                      );
+
+                      roomProvider.setSelectedVideos(currentSelectedVideos);
+
                       Navigator.pushNamed(context, '/makeroomwaiting');
                     },
                     style: ElevatedButton.styleFrom(
@@ -177,6 +224,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   @override
   Widget build(BuildContext context) {
     HostProvider hostProvider = Provider.of<HostProvider>(context);
+    RoomProvider roomProvider = Provider.of<RoomProvider>(context);
     HostUtil hostUtil = HostUtil();
     hostUtil.getHost(hostProvider);
     return Scaffold(
@@ -205,12 +253,13 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
         actions: [
           TextButton(
             onPressed: () {
-               _showModalSheet();
+              _showModalSheet(roomProvider);
             },
             child: const Text(
               '확인',
-              style: TextStyle(color: Colors.black,
-              fontSize: 14,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
               ),
             ),
           ),
@@ -231,7 +280,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
               child: TextField(
                 controller: _queryController,
                 onSubmitted: (value) {
-                  _searchVideos(query);
+                  _searchVideos(query, roomProvider);
                 },
                 onChanged: (value) {
                   _onQueryChanged();
@@ -276,7 +325,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                           color: Color(0xFF9C9C9C),
                         ),
                         onPressed: () {
-                          _searchVideos(query);
+                          _searchVideos(query, roomProvider);
                         },
                       ),
                       SizedBox(width: MediaQuery.of(context).size.height / 50),
@@ -304,7 +353,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                             setState(() {
                               print("Updated value: ${videos[index].title}");
                               print(videos[index].id);
-                              _onVideoTap(index);
+                              _onVideoTap(index, roomProvider);
                             });
                           },
                           child: Padding(
@@ -328,7 +377,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                                 child: Checkbox(
                                   onChanged: (value) {
                                     setState(() {
-                                      _onVideoTap(index);
+                                      _onVideoTap(index, roomProvider);
                                     });
                                   },
                                   value:

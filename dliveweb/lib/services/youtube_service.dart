@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/models/youtube_video_model.dart';
 
 class ApiService {
-  final String? apiKey = dotenv.env['YOUTUBE_API_KEY3'];
+  final String? apiKey = "AIzaSyCFonIKvuIMy_KjV16V1e3NWcC7A96j7gY";
 
   // 검색어를 받아와서 비디오를 로드
   Future<List<YoutubeVideo>> fetchVideos(String query) async {
