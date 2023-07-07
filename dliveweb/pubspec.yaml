@@ -38,6 +38,7 @@ dependencies:
   flutter_carousel_widget: ^2.0.4
   provider: ^6.0.5
   html: ^0.15.4
+  firebase_dynamic_links: ^5.3.3
 
 dev_dependencies:
   flutter_test:
