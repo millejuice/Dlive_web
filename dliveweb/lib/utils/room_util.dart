@@ -74,16 +74,24 @@ class RoomProvider extends ChangeNotifier {
 class RoomUtil {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Future<void> addVideoTitles(String roomId, List videoTitles) async {
-    CollectionReference roomCollection = firestore.collection('Room');
-    DocumentReference roomDocument = roomCollection.doc(roomId);
+  Future<void> addVideoTitles(String roomId, List<String> videoTitles) async {
+  CollectionReference roomCollection = firestore.collection('Room');
+  QuerySnapshot querySnapshot = await roomCollection.where('id', isEqualTo: roomId).get();
+
+  if (querySnapshot.docs.isNotEmpty) {
+    DocumentReference roomDocument = querySnapshot.docs[0].reference;
 
     for (String videoTitle in videoTitles) {
-      roomDocument.update({
+      await roomDocument.update({
         'videoTitles': FieldValue.arrayUnion([videoTitle]),
       });
     }
+  } else {
+    // roomId와 일치하는 문서가 없는 경우에 대한 처리를 진행합니다.
+    // 예를 들어, null을 반환하거나 에러를 throw할 수 있습니다.
+    throw Exception('Room document not found');
   }
+}
 
   Future<void> getRooms(List roomIds, RoomProvider roomProvider) async {
     List<Room> rooms = [];
