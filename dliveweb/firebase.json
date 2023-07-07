@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "pard-dlive-b27d9",
     "public": "build/web",
     "ignore": [
       "firebase.json",
