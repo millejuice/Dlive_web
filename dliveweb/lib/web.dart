@@ -4,6 +4,7 @@ import 'package:dliveweb/screens/signup_page1.dart';
 import 'package:dliveweb/screens/signup_page2.dart';
 import 'package:dliveweb/screens/signup_page3.dart';
 import 'package:dliveweb/screens/web_to_app.dart';
+import 'package:dliveweb/screens/get_code_screen.dart';
 import 'package:flutter/material.dart';
 
 class DliveWeb extends StatelessWidget {
@@ -17,6 +18,7 @@ class DliveWeb extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SignUpPage1(),
+        '/code': (context) => const GetCodeScreen(),
         '/signup2': (context) => const SignUpPage2(),
         '/signup3': (context) => const SignUpPage3(),
         '/coremusicadd': (context) => const CoreMusicAdd(),

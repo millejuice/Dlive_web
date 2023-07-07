@@ -72,30 +72,17 @@ class RoomProvider extends ChangeNotifier {
 }
 
 class RoomUtil {
-  final FirebaseAuth auth = FirebaseAuth.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Future<void> addRoom(String name, String id, String img, String url,
-      String playlist, List member, List videoTitles) async {
-    User? user = auth.currentUser;
-    CollectionReference hostCollection = firestore.collection('Host');
-    DocumentReference hostDocument = hostCollection.doc(user!.uid);
-
+  Future<void> addVideoTitles(String roomId, List videoTitles) async {
     CollectionReference roomCollection = firestore.collection('Room');
-    DocumentReference newRoomDocument = await roomCollection.add({
-      'name': name,
-      'id': id,
-      'img': img,
-      'url': url,
-      'playlist': playlist,
-      'member': member,
-      'videoTitles': videoTitles,
-      'timestamp': Timestamp.now()
-    });
+    DocumentReference roomDocument = roomCollection.doc(roomId);
 
-    hostDocument.update({
-      'room': FieldValue.arrayUnion([newRoomDocument.id]),
-    });
+    for (String videoTitle in videoTitles) {
+      roomDocument.update({
+        'videoTitles': FieldValue.arrayUnion([videoTitle]),
+      });
+    }
   }
 
   Future<void> getRooms(List roomIds, RoomProvider roomProvider) async {
