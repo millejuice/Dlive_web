@@ -1,4 +1,5 @@
 import 'package:dliveweb/utils/host_util.dart';
+import 'package:dliveweb/utils/room_util.dart';
 import 'package:dliveweb/web.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,9 @@ void main() async{
       ),
       ChangeNotifierProvider<HostProvider>(
         create: (_) => HostProvider(),
+      ),
+      ChangeNotifierProvider<RoomProvider>(
+        create: (_) => RoomProvider(),
       ),
     ],
     child: const DliveWeb(),
