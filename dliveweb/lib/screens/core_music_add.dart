@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dliveweb/models/youtube_video_model.dart';
 import 'package:dliveweb/services/youtube_service.dart';
 import 'package:dliveweb/utils/host_util.dart';
+import 'package:dliveweb/utils/member_util.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -64,7 +65,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   }
 
   // 영상 검색 함수
-  void _searchVideos(String query, RoomProvider roomProvider) {
+  void _searchVideos(String query, RoomProvider roomProvider, MemberProvider memberProvider) {
     if (query.isNotEmpty) {
       _apiService.fetchVideos(query).then((videos) {
         setState(() {
@@ -82,7 +83,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   }
 
   // 비디오 리스트 눌렀을때 실행되는 함수
-  void _onVideoTap(int index, RoomProvider roomProvider) {
+  void _onVideoTap(int index, RoomProvider roomProvider, MemberProvider memberProvider) {
     setState(() {
       // 현재 선택된 항목 수를 계산합니다.
       int currentSelectedCount = selectedVideos.length;
@@ -99,7 +100,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
           selectedVideos.remove(videos[index]); // 선택 취소한 비디오를 제거합니다.
         }
 
-        _showModalSheet(roomProvider);
+        _showModalSheet(roomProvider, memberProvider);
       } else {
         // 이미 3개가 선택되어 있다면, 경고 메시지를 표시합니다.
         ScaffoldMessenger.of(context).showSnackBar(
@@ -110,7 +111,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   }
 
   // 포기할 수 없는 3곡(밑에서 슝 올라오는거)
-  void _showModalSheet(RoomProvider roomProvider) {
+  void _showModalSheet(RoomProvider roomProvider, MemberProvider memberProvider) {
     if (selectedVideos.length < 3) {
       Timer(const Duration(milliseconds: 1500), () {
         Navigator.pop(context); // 모달 닫기
@@ -184,18 +185,9 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                       List<YoutubeVideo> currentSelectedVideos =
                           List.from(selectedVideos); // 선택된 비디오 리스트를 복사
 
-                      await RoomUtil().addRoom(
-                        roomProvider.name,
-                        roomProvider.id,
-                        roomProvider.img,
-                        roomProvider.url,
-                        roomProvider.playlist,
-                        [hostProvider.name],
-                        roomProvider.videoTitles,
-                      );
-
-                      roomProvider.setSelectedVideos(currentSelectedVideos);
-
+                      await RoomUtil().addVideoTitles(memberProvider.code, videoTitles);
+                      print(memberProvider.code);
+                      print(videoTitles);
                       Navigator.pushNamed(context, '/makeroomwaiting');
                     },
                     style: ElevatedButton.styleFrom(
@@ -225,6 +217,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
   Widget build(BuildContext context) {
     HostProvider hostProvider = Provider.of<HostProvider>(context);
     RoomProvider roomProvider = Provider.of<RoomProvider>(context);
+    MemberProvider memberProvider = Provider.of<MemberProvider>(context);
     HostUtil hostUtil = HostUtil();
     hostUtil.getHost(hostProvider);
     return Scaffold(
@@ -253,7 +246,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
         actions: [
           TextButton(
             onPressed: () {
-              _showModalSheet(roomProvider);
+              _showModalSheet(roomProvider, memberProvider);
             },
             child: const Text(
               '확인',
@@ -280,7 +273,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
               child: TextField(
                 controller: _queryController,
                 onSubmitted: (value) {
-                  _searchVideos(query, roomProvider);
+                  _searchVideos(query, roomProvider, memberProvider);
                 },
                 onChanged: (value) {
                   _onQueryChanged();
@@ -325,7 +318,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                           color: Color(0xFF9C9C9C),
                         ),
                         onPressed: () {
-                          _searchVideos(query, roomProvider);
+                          _searchVideos(query, roomProvider, memberProvider);
                         },
                       ),
                       SizedBox(width: MediaQuery.of(context).size.height / 50),
@@ -353,7 +346,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                             setState(() {
                               print("Updated value: ${videos[index].title}");
                               print(videos[index].id);
-                              _onVideoTap(index, roomProvider);
+                              _onVideoTap(index, roomProvider, memberProvider);
                             });
                           },
                           child: Padding(
@@ -377,7 +370,7 @@ class _CoreMusicAddState extends State<CoreMusicAdd> {
                                 child: Checkbox(
                                   onChanged: (value) {
                                     setState(() {
-                                      _onVideoTap(index, roomProvider);
+                                      _onVideoTap(index, roomProvider, memberProvider);
                                     });
                                   },
                                   value:

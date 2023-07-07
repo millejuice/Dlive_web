@@ -6,10 +6,12 @@ class MemberProvider extends ChangeNotifier {
   String _name = '';
   String _character = 'assets/character_pale.png';
   List _music = [];
+  String _code = '';
 
   String get name => _name;
   String get character => _character;
   List get music => _music;
+  String get code => _code;
 
   void setName(String name) {
     _name = name;
@@ -23,6 +25,11 @@ class MemberProvider extends ChangeNotifier {
 
   void setMusic(List music) {
     _music = music;
+    notifyListeners();
+  }
+
+  void setCode(String code) {
+    _code = code;
     notifyListeners();
   }
 }

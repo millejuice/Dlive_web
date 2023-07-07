@@ -105,7 +105,7 @@ class _SignUpPage1State extends State<SignUpPage1> {
                 ),
               ),
               onTap: () {
-                Navigator.pushNamed(context, '/signup2');
+                Navigator.pushNamed(context, '/code');
               },
             ),
           ],
